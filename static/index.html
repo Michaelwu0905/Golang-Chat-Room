@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go WebSocket Chatroom!</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 20px; }
+        #log { height: 60vh; border: 1px solid #ddd; padding: 10px; overflow: auto; }
+        #bar { margin-top: 10px; display: flex; gap: 8px; }
+        input, button { font-size: 16px; }
+    </style>
+</head>
+<body>
+  <h1>WebSocket 聊天室</h1>
+  <div id="log"></div>
+  <div id="bar">
+    <input id="name" placeholder="昵称" style="width: 20ch" />
+    <input id="msg" placeholder="输入消息并回车发送…" style="flex:1" />
+    <button id="send">发送</button>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    const nameEl = document.getElementById('name');
+    const msgEl  = document.getElementById('msg');
+    const sendBtn= document.getElementById('send');
+
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(`${proto}://${location.host}/ws`);
+
+    ws.addEventListener('open', () => append('✅ 已连接'));
+    ws.addEventListener('close', () => append('❌ 连接已关闭'));
+    ws.addEventListener('error', () => append('⚠️ 连接出错'));
+    ws.addEventListener('message', e => append(e.data));
+
+    function append(text) {
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.textContent = `[${time}] ${text}`;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function send() {
+      const name = nameEl.value.trim() || '匿名';
+      const body = msgEl.value.trim();
+      if (!body) return;
+      ws.send(`${name}: ${body}`);
+      msgEl.value = '';
+    }
+
+    sendBtn.onclick = send;
+    msgEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') send();
+    });
+  </script>
+</body>
+</html>
