@@ -4,6 +4,6 @@
 ## 使用方法
 1. 进入项目根目录
 2.  命令行输入：
-go mod tidy
-go run .
-3. 打开多个浏览器页面访问: http://localhost:8080, 在浏览器页面可看到广播效果
+3. go mod tidy
+4. go run .
+5. 打开多个浏览器页面访问: http://localhost:8080, 在浏览器页面可看到广播效果
