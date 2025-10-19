@@ -8,6 +8,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const historyLimit = 50
+
 // 基本配置
 var upgrader = websocket.Upgrader{
 	// 为简单起见，放开同源限制
@@ -27,6 +29,7 @@ type Hub struct {
 	broadcast  chan []byte
 	register   chan *Client
 	unregister chan *Client
+	history    [][]byte
 }
 
 func NewHub() *Hub {
@@ -35,6 +38,7 @@ func NewHub() *Hub {
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
+		history:    make([][]byte, 0, historyLimit),
 	}
 }
 
@@ -43,12 +47,23 @@ func (h *Hub) Run() {
 		select {
 		case c := <-h.register:
 			h.clients[c] = true
+			if len(h.history) > 0 {
+				c.send <- []byte("📜 最近消息回放：")
+				for _, msg := range h.history {
+					c.send <- append([]byte(nil), msg...)
+				}
+			}
 		case c := <-h.unregister:
 			if _, ok := h.clients[c]; ok {
 				delete(h.clients, c)
 				close(c.send)
 			}
 		case msg := <-h.broadcast:
+			cloned := append([]byte(nil), msg...)
+			h.history = append(h.history, cloned)
+			if len(h.history) > historyLimit {
+				h.history = h.history[1:]
+			}
 			for c := range h.clients {
 				select {
 				case c.send <- msg:
